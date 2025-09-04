@@ -124,7 +124,6 @@ const EventCard = ({ event, className, onClick }: EventCardProps) => (
 export default function FaprnaNews() {
   const [events, setEvents] = useState<IEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   // Carousel state
   const [current, setCurrent] = useState(0);
@@ -138,7 +137,6 @@ export default function FaprnaNews() {
     const fetchEvents = async () => {
       try {
         setIsLoading(true);
-        setError(null);
 
         const [latest, firstTwo] = await Promise.all([
           getLatestEvent(),
@@ -158,7 +156,6 @@ export default function FaprnaNews() {
 
         setEvents(combined);
       } catch (err) {
-        setError("Failed to load events. Please try again later.");
         console.error("Error fetching events:", err);
       } finally {
         setIsLoading(false);
@@ -270,28 +267,6 @@ export default function FaprnaNews() {
                 </div>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  if (error) {
-    return (
-      <section className="w-full bg-gray-50 py-16">
-        <div className="container mx-auto px-4 text-center">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-8 max-w-md mx-auto">
-            <h3 className="text-lg font-semibold text-red-800 mb-2">
-              Unable to Load Events
-            </h3>
-            <p className="text-red-600 mb-4">{error}</p>
-            <Button
-              onClick={() => window.location.reload()}
-              variant="outline"
-              className="border-red-300 text-red-700 hover:bg-red-50"
-            >
-              Try Again
-            </Button>
           </div>
         </div>
       </section>
@@ -423,7 +398,21 @@ export default function FaprnaNews() {
 
         {/* Desktop/Tablet View - Only Grid */}
         <div className="hidden md:block">
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+          <div
+            className={cn(
+              "grid gap-8",
+              events.length === 1
+                ? "md:grid-cols-1 justify-center"
+                : events.length === 2
+                  ? "md:grid-cols-2 justify-center"
+                  : "md:grid-cols-2 lg:grid-cols-3"
+            )}
+            style={
+              events.length < 3
+                ? { justifyItems: "center" }
+                : undefined
+            }
+          >
             {events.map((event) => (
               <EventCard
                 key={event.id}

@@ -83,6 +83,11 @@ export default function EventAdminDashboard() {
     setIsLoading(true);
     try {
       const data = await getAllEvents();
+      if (typeof data === "string") {
+        toast(data);
+        setIsLoading(false);
+        return;
+      }
       setEventItems(data);
       setIsLoading(false);
     } catch {

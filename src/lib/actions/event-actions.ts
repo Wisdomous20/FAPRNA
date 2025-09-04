@@ -12,10 +12,13 @@ export async function getAllEvents() {
         date: "desc",
       },
     })
+
+    if (events.length === 0) return "No events yet"
+
     return events
   } catch (error) {
     console.error("Failed to fetch events:", error)
-    throw new Error("Failed to fetch events")
+    return "Failed to fetch events. Please try again later."
   }
 }
 
@@ -27,14 +30,15 @@ export async function getFirstTwoEvents(): Promise<IEvent[]> {
       orderBy: {
         date: "desc",
       },
-    })
+    });
+
     return events
   } catch {
     throw new Error("Failed to fetch events")
   }
 }
 
-export async function getNotLatestEvents(): Promise<IEvent[]> {
+export async function getNotLatestEvents(): Promise<IEvent[] | undefined> {
   try {
     const events = await prisma.event.findMany({
       where: { isLatest: false },
@@ -42,27 +46,28 @@ export async function getNotLatestEvents(): Promise<IEvent[]> {
         date: "desc",
       },
     })
+
+    if (events.length === 0) throw new Error("No non-latest events found")
+
     return events
   } catch (error) {
     console.error("Failed to fetch events:", error)
-    throw new Error("Failed to fetch events")
   }
 }
 
-export async function getLatestEvent(): Promise<IEvent> {
+export async function getLatestEvent(): Promise<IEvent | undefined> {
   try {
     const latestEvent = await prisma.event.findFirst({
       where: { isLatest: true },
     })
 
-    if (latestEvent === null) {
-      throw new Error("no latest events yet")
+    if (!latestEvent) {
+      throw new Error("No latest event found")
     }
 
     return latestEvent
   } catch (error) {
     console.error("Failed to fetch latest event:", error)
-    throw new Error("Failed to fetch latest event")
   }
 }
 
@@ -118,11 +123,9 @@ export async function createEvent(data: IEvent) {
   }
 }
 
-// Update event item
 export async function updateEvent(id: string, data: IEvent) {
   try {
     // If this event is set as latest, unset any other latest event
-    console.log(!isNaN(data.ceus))
     if (data.isLatest) {
       await prisma.event.updateMany({
         where: {

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import { Card, CardContent } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, Calendar, MapPin, DollarSign, Award, Star } from "lucide-react"
 import Link from "next/link"
@@ -10,11 +11,12 @@ import { getEventByTitle } from "@/lib/actions/event-actions"
 import { IEvent } from "@/lib/interfaces"
 import RegisterModal from "./RegisterModal"
 
-export default function EventDetails(title: {title: string}) {
+export default function EventDetails(title: { title: string }) {
 
   const [eventDetail, setEventDetail] = useState<IEvent | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isRegistrationModalOpen, setIsRegistrationModalOpen] = useState(false)
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false)
 
   useEffect(() => {
     async function fetchEventDetail() {
@@ -97,7 +99,10 @@ export default function EventDetails(title: {title: string}) {
                 <div className="lg:col-span-2 space-y-8">
                   {/* Event Image */}
                   <Card className="overflow-hidden border-0 shadow-2xl">
-                    <div className="relative h-80">
+                    <div
+                      className="relative h-80"
+                      onClick={() => setIsImageModalOpen(true)}
+                    >
                       <Image
                         src={eventDetail.image || "/window.svg"}
                         alt={eventDetail.title}
@@ -210,7 +215,7 @@ export default function EventDetails(title: {title: string}) {
                             rel="noopener noreferrer"
                           >
                             <svg className="w-6 h-6 mr-2" viewBox="0 0 24 24" fill="currentColor">
-                              <path d="M21.8 8.001a2.75 2.75 0 0 0-1.94-1.946C18.2 5.5 12 5.5 12 5.5s-6.2 0-7.86.555A2.75 2.75 0 0 0 2.2 8.001 28.6 28.6 0 0 0 1.5 12a28.6 28.6 0 0 0 .7 3.999 2.75 2.75 0 0 0 1.94 1.946C5.8 18.5 12 18.5 12 18.5s6.2 0 7.86-.555a2.75 2.75 0 0 0 1.94-1.946A28.6 28.6 0 0 0 22.5 12a28.6 28.6 0 0 0-.7-3.999zM10 15.5v-7l6 3.5-6 3.5z"/>
+                              <path d="M21.8 8.001a2.75 2.75 0 0 0-1.94-1.946C18.2 5.5 12 5.5 12 5.5s-6.2 0-7.86.555A2.75 2.75 0 0 0 2.2 8.001 28.6 28.6 0 0 0 1.5 12a28.6 28.6 0 0 0 .7 3.999 2.75 2.75 0 0 0 1.94 1.946C5.8 18.5 12 18.5 12 18.5s6.2 0 7.86-.555a2.75 2.75 0 0 0 1.94-1.946A28.6 28.6 0 0 0 22.5 12a28.6 28.6 0 0 0-.7-3.999zM10 15.5v-7l6 3.5-6 3.5z" />
                             </svg>
                             Watch Event Recording
                           </a>
@@ -262,6 +267,27 @@ export default function EventDetails(title: {title: string}) {
           onClose={() => setIsRegistrationModalOpen(false)}
           event={eventDetail}
         />
+        <Dialog open={isImageModalOpen} onOpenChange={setIsImageModalOpen}>
+          <DialogTitle>
+            <Button
+              variant="ghost"
+              className="absolute top-4 right-4 z-10"
+              onClick={() => setIsImageModalOpen(false)}
+            >
+              <span className="sr-only">Close</span>
+            </Button>
+          </DialogTitle>
+          <DialogContent className="max-w-4xl p-0 bg-black">
+            <div className="relative w-full h-[80vh]">
+              <Image
+                src={eventDetail.image || "/window.svg"}
+                alt={eventDetail.title}
+                fill
+                className="object-contain"
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     )
   )

@@ -37,7 +37,7 @@ export default function RegistrationDashboard() {
     try {
       const [events, statsData] = await Promise.all([getAllEvents(), getEventRegistrationStats()])
 
-      if (events && events.length === 0) {
+      if (typeof events === "string") {
         toast("No events found")
         setStats(null)
         setIsLoading(false)

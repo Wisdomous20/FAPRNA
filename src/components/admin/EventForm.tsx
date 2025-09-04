@@ -280,6 +280,8 @@ export default function EventForm({ event }: EventFormProps) {
                               selected={field.value}
                               onSelect={field.onChange}
                               autoFocus
+                              captionLayout="dropdown"
+                              endMonth={new Date(new Date().getFullYear() + 5, 11, 31)}
                             />
                           </PopoverContent>
                         </Popover>

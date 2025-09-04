@@ -113,7 +113,7 @@ export default function LoginForm() {
                       <Input
                         {...field}
                         type="email"
-                        placeholder="admin@faprna.org"
+                        placeholder="Enter your email address"
                         disabled={isLoading}
                       />
                     </FormControl>

@@ -21,7 +21,11 @@ export default function Navbar() {
   useEffect(() => {
     const fetchLatestEvent = async () => {
       const result = await getLatestEvent();
-      setLatestEventTitle(result.title);
+      if (!result) {
+        console.log("No latest event found");
+        return;
+      }
+      setLatestEventTitle(result!.title);
     };
 
     fetchLatestEvent();

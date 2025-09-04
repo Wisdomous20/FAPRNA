@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import {
   Calendar,
   MapPin,
@@ -43,7 +44,7 @@ const EVENTS_PER_PAGE = 3;
 
 export default function EventRegistration() {
   const [isLoading, setIsLoading] = useState(true);
-  const [events, setEvents] = useState<IEvent[]>([]);
+  const [events, setEvents] = useState<IEvent[] | undefined>([]);
   const [latestEvent, setLatestEvent] = useState<IEvent | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [locationFilter, setLocationFilter] = useState("All locations");
@@ -51,15 +52,17 @@ export default function EventRegistration() {
   const [ceuFilter, setCeuFilter] = useState("All CEUs");
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<{ src: string, alt: string } | null>(null);
 
   // Memoized unique values to prevent unnecessary recalculations
   const uniqueLocations = useMemo(() => {
-    const locations = events.map((event) => event.location).filter(Boolean);
+    const locations = events?.map((event) => event.location).filter(Boolean);
     return ["All locations", ...Array.from(new Set(locations))];
   }, [events]);
 
   const uniqueCEUs = useMemo(() => {
-    const ceus = events.map((event) => event.ceus).filter(Boolean);
+    const ceus = events?.map((event) => event.ceus).filter(Boolean);
     return ["All CEUs", ...Array.from(new Set(ceus)).sort((a, b) => a - b)];
   }, [events]);
 
@@ -85,8 +88,18 @@ export default function EventRegistration() {
           getLatestEvent(),
         ]);
 
+        if (typeof latestData === "string") {
+          console.error(latestData);
+          return;
+        }
+
+        if (typeof eventsData === "string") {
+          console.error(eventsData);
+          return;
+        }
+
         // Process events once
-        const processedEvents = eventsData.map((event) => ({
+        const processedEvents = eventsData?.map((event) => ({
           ...event,
           ytLink: event.ytLink === null ? undefined : event.ytLink,
         }));
@@ -95,10 +108,10 @@ export default function EventRegistration() {
         setLatestEvent(
           latestData
             ? {
-                ...latestData,
-                ytLink:
-                  latestData.ytLink === null ? undefined : latestData.ytLink,
-              }
+              ...latestData,
+              ytLink:
+                latestData.ytLink === null ? undefined : latestData.ytLink,
+            }
             : null
         );
       } catch (error) {
@@ -118,7 +131,7 @@ export default function EventRegistration() {
     // Search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
+      filtered = filtered?.filter(
         (event) =>
           event.title.toLowerCase().includes(query) ||
           event.description.toLowerCase().includes(query) ||
@@ -128,13 +141,13 @@ export default function EventRegistration() {
 
     // Location filter
     if (locationFilter !== "All locations") {
-      filtered = filtered.filter((event) => event.location === locationFilter);
+      filtered = filtered?.filter((event) => event.location === locationFilter);
     }
 
     // CEU filter
     if (ceuFilter !== "All CEUs") {
       const ceuValue = parseInt(ceuFilter);
-      filtered = filtered.filter((event) => event.ceus === ceuValue);
+      filtered = filtered?.filter((event) => event.ceus === ceuValue);
     }
 
     // Date filter
@@ -159,7 +172,7 @@ export default function EventRegistration() {
 
       const endDate = getDateRange();
       if (endDate) {
-        filtered = filtered.filter((event) => {
+        filtered = filtered?.filter((event) => {
           const eventDate = new Date(event.date);
           eventDate.setHours(0, 0, 0, 0);
 
@@ -180,15 +193,27 @@ export default function EventRegistration() {
   }, [events, searchQuery, locationFilter, dateFilter, ceuFilter]);
 
   // Pagination calculations
-  const totalPages = Math.ceil(filteredEvents.length / EVENTS_PER_PAGE);
+  const totalPages = Math.ceil(filteredEvents!.length / EVENTS_PER_PAGE);
   const startIndex = (currentPage - 1) * EVENTS_PER_PAGE;
   const endIndex = startIndex + EVENTS_PER_PAGE;
-  const currentEvents = filteredEvents.slice(startIndex, endIndex);
+  const currentEvents = filteredEvents?.slice(startIndex, endIndex);
 
   // Reset pagination when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [filteredEvents.length]);
+  }, [filteredEvents]);
+
+  const openImage = useCallback((imageUrl: string | undefined, title: string) => {
+    if (imageUrl) {
+      setSelectedImage({
+        src: imageUrl,
+        alt: title
+      });
+      setIsImageModalOpen(true);
+    } else {
+      console.warn("No image URL provided for modal.");
+    }
+  }, []);
 
   // Memoized filter state
   const hasActiveFilters = useMemo(
@@ -576,9 +601,9 @@ export default function EventRegistration() {
               </h2>
               <p className="text-gray-600 mt-2">
                 {hasActiveFilters
-                  ? `Showing ${filteredEvents.length} of ${events.length} events`
-                  : `${events.length} events available`}
-                {filteredEvents.length > EVENTS_PER_PAGE && (
+                  ? `Showing ${filteredEvents?.length} of ${events!.length} events`
+                  : `${events!.length} events available`}
+                {filteredEvents!.length > EVENTS_PER_PAGE && (
                   <span className="ml-2">
                     (Page {currentPage} of {totalPages})
                   </span>
@@ -601,7 +626,12 @@ export default function EventRegistration() {
           {latestEvent && !hasActiveFilters && (
             <Card className="mb-8 sm:mb-12 border-0 shadow-xl overflow-hidden">
               <div className="grid grid-cols-1 md:grid-cols-2">
-                <div className="relative h-64 sm:h-80 md:h-auto">
+                <div
+                  className="relative h-64 sm:h-80 md:h-auto"
+                  onClick={() => {
+                    openImage(latestEvent.image, latestEvent.title)
+                  }}
+                >
                   <Image
                     src={
                       latestEvent.image ||
@@ -673,7 +703,7 @@ export default function EventRegistration() {
           )}
 
           {/* No Results Message */}
-          {filteredEvents.length === 0 && hasActiveFilters && (
+          {filteredEvents!.length === 0 && hasActiveFilters && (
             <div className="text-center py-8 sm:py-12">
               <div className="text-gray-400 mb-4">
                 <Search className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4" />
@@ -691,15 +721,18 @@ export default function EventRegistration() {
           )}
 
           {/* Event Grid */}
-          {currentEvents.length > 0 && (
+          {currentEvents!.length > 0 && (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                {currentEvents.map((event, index) => (
+                {currentEvents?.map((event, index) => (
                   <Card
                     key={`${event.title}-${startIndex + index}`}
                     className="group hover:shadow-xl transition-all duration-300 border-0 shadow-lg"
                   >
-                    <div className="relative h-40 sm:h-48 overflow-hidden rounded-t-lg">
+                    <div
+                      className="relative h-40 sm:h-48 overflow-hidden rounded-t-lg"
+                      onClick={() => openImage(event.image, event.title)}
+                    >
                       <Image
                         src={
                           event.image ||
@@ -763,8 +796,8 @@ export default function EventRegistration() {
                   {/* Pagination Info */}
                   <div className="text-sm text-gray-600 sm:order-1">
                     Showing {startIndex + 1}-
-                    {Math.min(endIndex, filteredEvents.length)} of{" "}
-                    {filteredEvents.length} events
+                    {Math.min(endIndex, filteredEvents!.length)} of{" "}
+                    {filteredEvents!.length} events
                   </div>
 
                   {/* Pagination Buttons */}
@@ -821,11 +854,10 @@ export default function EventRegistration() {
                                 currentPage === page ? "default" : "outline"
                               }
                               size="sm"
-                              className={`w-8 h-8 p-0 ${
-                                currentPage === page
-                                  ? "bg-blue-600 text-white hover:bg-blue-700"
-                                  : "hover:bg-blue-50"
-                              }`}
+                              className={`w-8 h-8 p-0 ${currentPage === page
+                                ? "bg-blue-600 text-white hover:bg-blue-700"
+                                : "hover:bg-blue-50"
+                                }`}
                             >
                               {page}
                             </Button>
@@ -873,6 +905,25 @@ export default function EventRegistration() {
           </div>
         </div>
       </section>
+
+      <Dialog open={isImageModalOpen} onOpenChange={setIsImageModalOpen}>
+        <DialogContent className="max-w-4xl p-0 bg-white">
+          <DialogTitle className="sr-only">
+            {selectedImage?.alt || "Event Image"}
+          </DialogTitle>
+          <div className="relative w-full h-[80vh]">
+            {selectedImage && (
+              <Image
+                src={selectedImage.src}
+                alt={selectedImage.alt}
+                fill
+                className="object-contain"
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }
