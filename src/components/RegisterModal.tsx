@@ -56,7 +56,7 @@ export default function RegisterModal({ isOpen, onClose, event }: EventRegistrat
   const totalSteps = 3
 
   // Calculate registration fee
-  const getRegistrationFee = () => (watch("isMember") ? 0 : 25);
+  const getRegistrationFee = () => ((watch("isMember") && event.internallyFree) ? 0 : 25);
 
   const nextStep = () => {
     if (currentStep < totalSteps) {
