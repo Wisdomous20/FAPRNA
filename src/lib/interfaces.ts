@@ -15,6 +15,7 @@ export interface IEvent {
   ytLink?: string | null;
   zeffyRegisterLink?: string | null
   expected_attendees: number;
+  internallyFree: boolean;
   createdAt: Date;
   updatedAt: Date
   isFinished: boolean;

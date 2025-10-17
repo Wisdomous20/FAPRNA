@@ -60,6 +60,7 @@ interface Event {
   ytLink?: string | undefined | null;
   zeffyRegisterLink?: string | null;
   expected_attendees: number;
+  internallyFree: boolean;
   createdAt: Date;
   updatedAt: Date;
   isFinished: boolean;
@@ -92,6 +93,7 @@ export default function EventForm({ event }: EventFormProps) {
       expected_attendees: event?.expected_attendees || 0,
       isFinished: event?.isFinished || false,
       isLatest: event?.isLatest || false,
+      internallyFree: event?.internallyFree || false,
     },
   });
 
@@ -442,6 +444,30 @@ export default function EventForm({ event }: EventFormProps) {
                           Estimated number of attendees.
                         </FormDescription>
                         <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="internallyFree"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 sm:p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold">
+                            Internally Available
+                          </FormLabel>
+                          <FormDescription className="text-sm sm:text-base md:text-lg">
+                            Mark if this event is free for current members.
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            className="data-[state=checked]:bg-[#003366] data-[state=unchecked]:bg-gray-200"
+                          />
+                        </FormControl>
                       </FormItem>
                     )}
                   />
