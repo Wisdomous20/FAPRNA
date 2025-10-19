@@ -1,7 +1,7 @@
 import EventDetails from "@/components/EventDetails";
 import { use } from "react";
 
-type Params = Promise<{ title: string }>
+type Params = Promise<{ id: string }>
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>
 
 export default function EventDetailsPage(props: {
@@ -10,12 +10,12 @@ export default function EventDetailsPage(props: {
 }) {
 
   const params = use(props.params)
-  const title = params.title
+  const id = params.id
 
   return (
     <div className="flex min-h-screen flex-col">
       <main className="flex-1">
-        <EventDetails title={title} />
+        <EventDetails id={id} />
       </main>
     </div>
   )

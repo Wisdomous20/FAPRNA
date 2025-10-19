@@ -7,11 +7,11 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, Calendar, MapPin, DollarSign, Award, Star } from "lucide-react"
 import Link from "next/link"
-import { getEventByTitle } from "@/lib/actions/event-actions"
+import { getEventById } from "@/lib/actions/event-actions"
 import { IEvent } from "@/lib/interfaces"
 import RegisterModal from "./RegisterModal"
 
-export default function EventDetails(title: { title: string }) {
+export default function EventDetails(id: { id: string }) {
 
   const [eventDetail, setEventDetail] = useState<IEvent | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -22,7 +22,7 @@ export default function EventDetails(title: { title: string }) {
     async function fetchEventDetail() {
       try {
         setIsLoading(true)
-        const event = await getEventByTitle(title.title.replace(/%20/g, " "))
+        const event = await getEventById(id.id);
         if (event) {
           setEventDetail({ ...event, ytLink: event.ytLink ?? undefined })
         } else {
@@ -36,7 +36,7 @@ export default function EventDetails(title: { title: string }) {
     }
 
     fetchEventDetail()
-  }, [title])
+  }, [id.id])
 
   const handleRegisterClick = () => {
     setIsRegistrationModalOpen(true)
