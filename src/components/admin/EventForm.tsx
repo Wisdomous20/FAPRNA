@@ -45,6 +45,7 @@ import { createEvent, updateEvent } from "@/lib/actions/event-actions";
 import { EventType } from "@/generated/prisma";
 import { IEvent } from "@/lib/interfaces";
 import { ImageUploadForm } from "@/components/admin/ImageUpload";
+import { useEdgeStore } from "@/lib/libstore/libstore-config";
 
 interface Event {
   id: string;
@@ -75,6 +76,7 @@ export default function EventForm({ event }: EventFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
   const isEditing = !!event;
+  const { edgestore } = useEdgeStore();
 
   // Initialize form with default values or existing event data
   const form = useForm<IEvent>({
@@ -112,6 +114,11 @@ export default function EventForm({ event }: EventFormProps) {
         expected_attendees: Number(values.expected_attendees),
         date: values.date,
       };
+
+      await edgestore.publicFiles.confirmUpload({
+        url: formattedValues.image,
+      });
+
       if (isEditing && event) {
         await updateEvent(event.id, values);
         toast("Event item updated successfully");

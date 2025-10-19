@@ -51,6 +51,7 @@ import {
   deleteEvent,
   setLatestEvent,
 } from "@/lib/actions/event-actions";
+import { useEdgeStore } from "@/lib/libstore/libstore-config";
 
 type EventType = "EVENT" | "RECOGNITION" | "TEAM";
 
@@ -78,6 +79,7 @@ export default function EventAdminDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const router = useRouter();
+  const { edgestore } = useEdgeStore();
 
   const fetchEvents = async () => {
     setIsLoading(true);
@@ -98,9 +100,21 @@ export default function EventAdminDashboard() {
 
   const handleDeleteEvent = async (id: string) => {
     try {
-      await deleteEvent(id);
-      toast("Event item deleted successfully");
-      fetchEvents();
+
+      // find the event in the db first
+      const eventToDelete = eventItems.find((event) => event.id === id);
+      if (eventToDelete) {
+        // delete the image from edgestore
+        await edgestore.publicFiles.delete({
+          url: eventToDelete.image,
+        });
+        await deleteEvent(id);
+        toast("Event item deleted successfully");
+        fetchEvents();
+      } else {
+        toast("Event item not found");
+        fetchEvents();
+      }
     } catch {
       toast("Failed to delete event item");
     }
