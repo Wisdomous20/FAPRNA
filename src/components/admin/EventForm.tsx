@@ -394,16 +394,16 @@ export default function EventForm({ event }: EventFormProps) {
                     control={form.control}
                     name="ceus"
                     rules={{
-                      required: "CEUs is required",
+                      required: "Fee is required",
                       min: {
                         value: 0,
-                        message: "CEUs must be a non-negative number",
+                        message: "Fee must be a non-negative number",
                       },
                     }}
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold">
-                          CEUs
+                          Registration Fee
                         </FormLabel>
                         <FormControl>
                           <Input
@@ -414,7 +414,7 @@ export default function EventForm({ event }: EventFormProps) {
                           />
                         </FormControl>
                         <FormDescription className="text-sm sm:text-base md:text-lg">
-                          Number of Continuing Education Units available (0 if
+                         (0 if
                           none).
                         </FormDescription>
                         <FormMessage />
