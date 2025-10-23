@@ -18,6 +18,7 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  DollarSign,
 } from "lucide-react";
 import Image from "next/image";
 import {
@@ -682,8 +683,8 @@ export default function EventRegistration() {
                       <span className="truncate">{latestEvent.location}</span>
                     </div>
                     <div className="flex items-center text-gray-600 text-sm sm:text-base">
-                      <Award className="w-4 h-4 sm:w-5 sm:h-5 mr-2 sm:mr-3 text-blue-600 flex-shrink-0" />
-                      <span>{latestEvent.ceus} CEUs Available</span>
+                      <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 mr-2 sm:mr-3 text-blue-600 flex-shrink-0" />
+                      <span>{latestEvent.ceus} Registration Fee</span>
                     </div>
                   </div>
 

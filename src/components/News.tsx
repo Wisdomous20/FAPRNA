@@ -1,7 +1,6 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getFirstTwoEvents, getLatestEvent } from "@/lib/actions/event-actions";
 import type { IEvent } from "@/lib/interfaces";
@@ -14,7 +13,6 @@ import {
   Calendar,
   MapPin,
   Clock,
-  Users,
   Play,
   Pause,
   ExternalLink,
@@ -56,11 +54,11 @@ const EventCard = ({ event, className, onClick }: EventCardProps) => (
               {event.type}
             </span>
           </div>
-          {event.ceus > 0 && (
+          {/* {event.ceus > 0 && (
             <Badge className="bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm">
               {event.ceus} CEUs
             </Badge>
-          )}
+          )} */}
         </div>
 
         <div>
@@ -102,12 +100,12 @@ const EventCard = ({ event, className, onClick }: EventCardProps) => (
       <p className="mb-6 text-gray-700 line-clamp-3">{event.description}</p>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4 text-sm text-gray-600">
-          {event.ceus > 0 && (
+          {/* {event.ceus > 0 && (
             <span className="flex items-center gap-1">
               <Users className="h-4 w-4" />
               {event.ceus} CEUs
             </span>
-          )}
+          )} */}
         </div>
         <Button
           variant="ghost"
