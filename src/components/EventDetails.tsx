@@ -7,11 +7,11 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, Calendar, MapPin, DollarSign, Award, Star } from "lucide-react"
 import Link from "next/link"
-import { getEventByTitle } from "@/lib/actions/event-actions"
+import { getEventById } from "@/lib/actions/event-actions"
 import { IEvent } from "@/lib/interfaces"
 import RegisterModal from "./RegisterModal"
 
-export default function EventDetails(title: { title: string }) {
+export default function EventDetails(id: { id: string }) {
 
   const [eventDetail, setEventDetail] = useState<IEvent | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -22,7 +22,7 @@ export default function EventDetails(title: { title: string }) {
     async function fetchEventDetail() {
       try {
         setIsLoading(true)
-        const event = await getEventByTitle(title.title.replace(/%20/g, " "))
+        const event = await getEventById(id.id);
         if (event) {
           setEventDetail({ ...event, ytLink: event.ytLink ?? undefined })
         } else {
@@ -36,7 +36,7 @@ export default function EventDetails(title: { title: string }) {
     }
 
     fetchEventDetail()
-  }, [title])
+  }, [id.id])
 
   const handleRegisterClick = () => {
     setIsRegistrationModalOpen(true)
@@ -184,13 +184,12 @@ export default function EventDetails(title: { title: string }) {
                             <DollarSign className="w-6 h-6 text-green-600 mr-4 mt-1" />
                             <div>
                               <div className="font-semibold text-green-800">Registration Fee</div>
-                              <div className="text-green-600 font-medium">Free for FAPRNA Members</div>
-                              <div className="text-gray-600">$25 for Non-Members</div>
+                              <div className="text-gray-600 font-medium">${eventDetail.ceus}</div>
                             </div>
                           </div>
                         </div>
 
-                        <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg p-4 border border-blue-200">
+                        {/* <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg p-4 border border-blue-200">
                           <div className="flex items-start">
                             <Award className="w-6 h-6 text-blue-600 mr-4 mt-1" />
                             <div>
@@ -200,7 +199,7 @@ export default function EventDetails(title: { title: string }) {
                               </div>
                             </div>
                           </div>
-                        </div>
+                        </div> */}
                       </div>
 
                       {/* YouTube Link Box */}
@@ -229,7 +228,7 @@ export default function EventDetails(title: { title: string }) {
                           Register Now
                         </Button>
                         <p className="text-center text-sm text-gray-500">
-                          Registration closes 48 hours before the event
+                          Registration closes 24 hours before the event
                         </p>
                       </div>
                     </CardContent>

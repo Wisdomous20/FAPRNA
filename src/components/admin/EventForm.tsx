@@ -45,6 +45,7 @@ import { createEvent, updateEvent } from "@/lib/actions/event-actions";
 import { EventType } from "@/generated/prisma";
 import { IEvent } from "@/lib/interfaces";
 import { ImageUploadForm } from "@/components/admin/ImageUpload";
+import { useEdgeStore } from "@/lib/libstore/libstore-config";
 
 interface Event {
   id: string;
@@ -60,6 +61,7 @@ interface Event {
   ytLink?: string | undefined | null;
   zeffyRegisterLink?: string | null;
   expected_attendees: number;
+  internallyFree: boolean;
   createdAt: Date;
   updatedAt: Date;
   isFinished: boolean;
@@ -74,6 +76,7 @@ export default function EventForm({ event }: EventFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
   const isEditing = !!event;
+  const { edgestore } = useEdgeStore();
 
   // Initialize form with default values or existing event data
   const form = useForm<IEvent>({
@@ -92,6 +95,7 @@ export default function EventForm({ event }: EventFormProps) {
       expected_attendees: event?.expected_attendees || 0,
       isFinished: event?.isFinished || false,
       isLatest: event?.isLatest || false,
+      internallyFree: event?.internallyFree || false,
     },
   });
 
@@ -110,6 +114,11 @@ export default function EventForm({ event }: EventFormProps) {
         expected_attendees: Number(values.expected_attendees),
         date: values.date,
       };
+
+      await edgestore.publicFiles.confirmUpload({
+        url: formattedValues.image,
+      });
+
       if (isEditing && event) {
         await updateEvent(event.id, values);
         toast("Event item updated successfully");
@@ -385,16 +394,16 @@ export default function EventForm({ event }: EventFormProps) {
                     control={form.control}
                     name="ceus"
                     rules={{
-                      required: "CEUs is required",
+                      required: "Fee is required",
                       min: {
                         value: 0,
-                        message: "CEUs must be a non-negative number",
+                        message: "Fee must be a non-negative number",
                       },
                     }}
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold">
-                          CEUs
+                          Registration Fee
                         </FormLabel>
                         <FormControl>
                           <Input
@@ -405,7 +414,7 @@ export default function EventForm({ event }: EventFormProps) {
                           />
                         </FormControl>
                         <FormDescription className="text-sm sm:text-base md:text-lg">
-                          Number of Continuing Education Units available (0 if
+                         (0 if
                           none).
                         </FormDescription>
                         <FormMessage />
@@ -442,6 +451,30 @@ export default function EventForm({ event }: EventFormProps) {
                           Estimated number of attendees.
                         </FormDescription>
                         <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="internallyFree"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 sm:p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold">
+                            Internally Available
+                          </FormLabel>
+                          <FormDescription className="text-sm sm:text-base md:text-lg">
+                            Mark if this event is free for current members.
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            className="data-[state=checked]:bg-[#003366] data-[state=unchecked]:bg-gray-200"
+                          />
+                        </FormControl>
                       </FormItem>
                     )}
                   />

@@ -16,7 +16,7 @@ import { getLatestEvent } from "@/lib/actions/event-actions";
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
 
-  const [latestEventTitle, setLatestEventTitle] = useState("");
+  const [latestEventId, setLatestEventId] = useState("");
 
   useEffect(() => {
     const fetchLatestEvent = async () => {
@@ -25,7 +25,7 @@ export default function Navbar() {
         console.log("No latest event found");
         return;
       }
-      setLatestEventTitle(result!.title);
+      setLatestEventId(result!.id);
     };
 
     fetchLatestEvent();
@@ -123,7 +123,7 @@ export default function Navbar() {
             </div>
           </div>
           <Link
-            href={`/event-registration/details/${latestEventTitle}`}
+            href={`/event-registration/details/${latestEventId}`}
             className="hidden md:block"
           >
             <Button
@@ -228,7 +228,7 @@ export default function Navbar() {
                 {/* Mobile CTA Button */}
                 <div className="p-6 bg-white border-t">
                   <Link
-                    href="/event-registration/details/MaternalandChildHealthEvent"
+                    href={`/event-registration/details/${latestEventId}`}
                     onClick={() => setIsOpen(false)}
                   >
                     <Button
