@@ -43,6 +43,18 @@ export interface Nomination {
   } | null
 }
 
+export interface NominationTemp {
+  id: string
+  nominatorName: string
+  nominatorEmail: string
+  nomineeName: string
+  nomineeEmail: string
+  createdAt: Date
+  category: string
+  reason: string
+  status: string
+}
+
 export interface NominationStats {
   total: number
   pending: number
