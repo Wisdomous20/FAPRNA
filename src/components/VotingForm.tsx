@@ -1,6 +1,6 @@
 "use client";
 
-import type React from "react";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,14 +8,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Send, Award, Star,  Crown, Medal, User } from "lucide-react";
+import { ArrowLeft, Send, Award, Star, Crown, Medal, User } from "lucide-react";
 import Link from "next/link";
-import { useState, useEffect } from "react";
-import { createNomination, getEligibleMembers } from "@/lib/actions/nomination-actions";
+import { useState } from "react";
+import { createNomination } from "@/lib/actions/nomination-actions";
 import { toast } from "sonner";
-
-// ...existing categories array...
 
 const categories = [
   {
@@ -41,12 +38,6 @@ const categories = [
   },
 ];
 
-interface EligibleMember {
-  id: string;
-  fullName: string;
-  email: string;
-}
-
 const FloatingParticles = () => {
   const [particles, setParticles] = useState<
     {
@@ -68,7 +59,8 @@ const FloatingParticles = () => {
     }));
     setParticles(newParticles);
   }, []);
-    return (
+
+  return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden">
       {particles.map((particle, i) => (
         <div
@@ -90,136 +82,101 @@ const FloatingParticles = () => {
   );
 };
 
-
 export default function VotingForm() {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [eligibleMembers, setEligibleMembers] = useState<EligibleMember[]>([]);
-  const [isLoadingMembers, setIsLoadingMembers] = useState(true);
   const [formData, setFormData] = useState({
-    nomineeId: "",
     nomineeName: "",
     nomineeEmail: "",
-    nomineePhone: "",
     nominatorName: "",
     nominatorEmail: "",
-    nominatorPhone: "",
+    nominatorPhoneNumber: "",
     reason: "",
     agreeTerms: false,
   });
 
-  // Fetch eligible members on component mount
-  useEffect(() => {
-    const fetchEligibleMembers = async () => {
-      try {
-        setIsLoadingMembers(true);
-        const members = await getEligibleMembers();
-        setEligibleMembers(members);
-      } catch (error) {
-        console.error("Failed to fetch eligible members:", error);
-        toast.error("Failed to load eligible members");
-      } finally {
-        setIsLoadingMembers(false);
-      }
-    };
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-    fetchEligibleMembers();
-  }, []);
+    if (
+      !selectedCategory ||
+      !formData.agreeTerms ||
+      !formData.nomineeName ||
+      !formData.nomineeEmail
+    ) {
+      toast.error("Please complete all required fields");
+      return;
+    }
 
-  // Handle nominee selection from dropdown
-  const handleNomineeSelect = (nomineeId: string) => {
-    const selectedMember = eligibleMembers.find((member) => member.id === nomineeId);
-    setFormData((prev) => ({
-      ...prev,
-      nomineeId,
-      nomineeName: selectedMember?.fullName || "",
-      nomineeEmail: selectedMember?.email || "",
-      nomineePhone: "", // If you have phone info, set it here
-    }));
-  };
+    setIsSubmitting(true);
 
- const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  
-  // Basic validation
-  if (!selectedCategory || !formData.agreeTerms || !formData.nomineeId) {
-    toast.error("Please complete all required fields");
-    return;
-  }
+    try {
+      const nominationData = {
+        nominator: {
+          fullName: formData.nominatorName,
+          email: formData.nominatorEmail,
+          phone: formData.nominatorPhoneNumber,
+        },
+        nominee: {
+          fullName: formData.nomineeName,
+          email: formData.nomineeEmail,
+        },
+        category: selectedCategory,
+        reason: formData.reason,
+      };
 
-  setIsSubmitting(true);
-  
-  try {
-    const nominationData = {
-      nominator: {
-        fullName: formData.nominatorName,
-        email: formData.nominatorEmail,
-        phone: formData.nominatorPhone,
-      },
-      nominee: {
-        fullName: formData.nomineeName,
-        email: formData.nomineeEmail,
-        phone: formData.nomineePhone,
-      },
-      category: selectedCategory,
-      reason: formData.reason,
-    };
+      const result = await createNomination(nominationData);
 
-    const result = await createNomination(nominationData);
-    
-    if (result.success) {
-      toast.success("🎉 Nomination submitted successfully!", {
-        description: `Your nomination for ${formData.nomineeName} has been submitted for review.`,
-        duration: 5000,
-      });
-      
-      // Reset form
-      setSelectedCategory("");
-      setFormData({
-        nomineeId: "",
-        nomineeName: "",
-        nomineeEmail: "",
-        nomineePhone: "",
-        nominatorName: "",
-        nominatorEmail: "",
-        nominatorPhone: "",
-        reason: "",
-        agreeTerms: false,
-      });
-    } else {
-      // Handle specific errors
-      if (result.error?.includes("already nominated")) {
-        toast.error("⚠️ You have already nominated someone for this category", {
-          description: "Each person can only submit one nomination per category per year.",
-          duration: 6000,
-        });
-      } else if (result.error?.includes("closed")) {
-        toast.error("❌ Nominations are currently closed", {
-          description: "Please check back when nominations reopen.",
+      if (result.success) {
+        toast.success("🎉 Nomination submitted successfully!", {
+          description: `Your nomination for ${formData.nomineeName} has been submitted for review.`,
           duration: 5000,
+        });
+
+        setSelectedCategory("");
+        setFormData({
+          nomineeName: "",
+          nomineeEmail: "",
+          nominatorName: "",
+          nominatorEmail: "",
+          nominatorPhoneNumber: "",
+          reason: "",
+          agreeTerms: false,
         });
       } else {
-        toast.error("❌ Failed to submit nomination", {
-          description: result.error || "Please try again.",
-          duration: 5000,
-        });
+        if (result.error?.includes("already nominated")) {
+          toast.error("⚠️ You have already nominated someone for this category", {
+            description:
+              "Each person can only submit one nomination per category per year.",
+            duration: 6000,
+          });
+        } else if (result.error?.includes("closed")) {
+          toast.error("❌ Nominations are currently closed", {
+            description: "Please check back when nominations reopen.",
+            duration: 5000,
+          });
+        } else {
+          toast.error("❌ Failed to submit nomination", {
+            description: result.error || "Please try again.",
+            duration: 5000,
+          });
+        }
       }
+    } catch (error) {
+      console.error("Submission error:", error);
+      toast.error("❌ Something went wrong", {
+        description: "Please try again or contact support.",
+        duration: 5000,
+      });
+    } finally {
+      setIsSubmitting(false);
     }
-  } catch (error) {
-    console.error("Submission error:", error);
-    toast.error("❌ Something went wrong", {
-      description: "Please try again or contact support.",
-      duration: 5000,
-    });
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+  };
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
-  
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-gray-900 to-black text-white relative overflow-hidden">
       <div
@@ -233,7 +190,6 @@ export default function VotingForm() {
       <FloatingParticles />
 
       <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
-        {/* ...existing header... */}
         <div className="mb-10">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8">
             <Button
@@ -281,8 +237,7 @@ export default function VotingForm() {
               LUMINANCE NOMINATION
             </h1>
             <p className="text-gray-300 text-lg max-w-2xl mx-auto animate-fade-in-up animation-delay-200">
-              Recognize excellence in Filipino-American advanced practice
-              nursing by nominating a deserving colleague
+              Recognize excellence in Filipino-American advanced practice nursing by nominating a deserving colleague
             </p>
           </div>
 
@@ -306,8 +261,7 @@ export default function VotingForm() {
         >
           <CardContent className="p-0">
             <div className="grid grid-cols-1 md:grid-cols-3">
-              {/* sidebar */}
-
+              {/* Sidebar */}
               <div
                 className="p-6 md:p-8"
                 style={{
@@ -322,95 +276,37 @@ export default function VotingForm() {
                       className="text-xl font-semibold mb-2 flex items-center"
                       style={{ color: "#D4AF37" }}
                     >
-                      <Medal
-                        className="w-5 h-5 mr-2"
-                        style={{ color: "#D4AF37" }}
-                      />
+                      <Medal className="w-5 h-5 mr-2" style={{ color: "#D4AF37" }} />
                       Nomination Process
                     </h3>
                     <ul className="space-y-3 text-sm text-gray-300">
-                      <li className="flex items-start">
-                        <span
-                          className="inline-flex items-center justify-center w-5 h-5 rounded-full mr-2 mt-0.5 text-xs"
-                          style={{
-                            backgroundColor: "rgba(212, 175, 55, 0.2)",
-                            color: "#D4AF37",
-                          }}
-                        >
-                          1
-                        </span>
-                        <span>Select an award category</span>
-                      </li>
-                      <li className="flex items-start">
-                        <span
-                          className="inline-flex items-center justify-center w-5 h-5 rounded-full mr-2 mt-0.5 text-xs"
-                          style={{
-                            backgroundColor: "rgba(212, 175, 55, 0.2)",
-                            color: "#D4AF37",
-                          }}
-                        >
-                          2
-                        </span>
-                        <span>Provide nominee information</span>
-                      </li>
-                      <li className="flex items-start">
-                        <span
-                          className="inline-flex items-center justify-center w-5 h-5 rounded-full mr-2 mt-0.5 text-xs"
-                          style={{
-                            backgroundColor: "rgba(212, 175, 55, 0.2)",
-                            color: "#D4AF37",
-                          }}
-                        >
-                          3
-                        </span>
-                        <span>Explain why they deserve recognition</span>
-                      </li>
-                      <li className="flex items-start">
-                        <span
-                          className="inline-flex items-center justify-center w-5 h-5 rounded-full mr-2 mt-0.5 text-xs"
-                          style={{
-                            backgroundColor: "rgba(212, 175, 55, 0.2)",
-                            color: "#D4AF37",
-                          }}
-                        >
-                          4
-                        </span>
-                        <span>Submit your nomination</span>
-                      </li>
+                      <li>1. Select an award category</li>
+                      <li>2. Provide nominee information</li>
+                      <li>3. Explain why they deserve recognition</li>
+                      <li>4. Submit your nomination</li>
                     </ul>
                   </div>
-                  </div>
-
                   <div
                     className="p-4 rounded-lg"
                     style={{ backgroundColor: "rgba(212, 175, 55, 0.1)" }}
                   >
                     <p className="text-sm text-gray-300 italic">
-                      &quot;Recognition of excellence inspires future
-                      generations to pursue greatness.&quot;
+                      &quot;Recognition of excellence inspires future generations to pursue greatness.&quot;
                     </p>
                   </div>
                 </div>
+              </div>
 
               {/* Form */}
               <div className="col-span-2 p-6 md:p-8">
                 <form onSubmit={handleSubmit} className="space-y-8">
-                  {/* ...existing category selection... */}
+                  {/* Category Selection */}
                   <div className="space-y-4">
-                    <h3
-                      className="text-xl font-semibold flex items-center"
-                      style={{ color: "#D4AF37" }}
-                    >
-                      <Award
-                        className="w-5 h-5 mr-2"
-                        style={{ color: "#D4AF37" }}
-                      />
+                    <h3 className="text-xl font-semibold flex items-center" style={{ color: "#D4AF37" }}>
+                      <Award className="w-5 h-5 mr-2" style={{ color: "#D4AF37" }} />
                       1. Select Award Category
                     </h3>
-                    <RadioGroup
-                      value={selectedCategory}
-                      onValueChange={setSelectedCategory}
-                    >
+                    <RadioGroup value={selectedCategory} onValueChange={setSelectedCategory}>
                       <div className="grid gap-4">
                         {categories.map((category) => (
                           <div
@@ -418,14 +314,10 @@ export default function VotingForm() {
                             className="relative rounded-lg transition-all duration-300"
                             style={{
                               backgroundColor:
-                                selectedCategory === category.id
-                                  ? "rgba(212, 175, 55, 0.1)"
-                                  : "transparent",
+                                selectedCategory === category.id ? "rgba(212, 175, 55, 0.1)" : "transparent",
                               borderWidth: "1px",
                               borderColor:
-                                selectedCategory === category.id
-                                  ? "#D4AF37"
-                                  : "rgba(255, 255, 255, 0.1)",
+                                selectedCategory === category.id ? "#D4AF37" : "rgba(255, 255, 255, 0.1)",
                             }}
                           >
                             <div className="flex items-start p-4">
@@ -435,9 +327,7 @@ export default function VotingForm() {
                                 className="mt-1"
                                 style={{
                                   borderColor:
-                                    selectedCategory === category.id
-                                      ? "#D4AF37"
-                                      : "#6b7280",
+                                    selectedCategory === category.id ? "#D4AF37" : "#6b7280",
                                 }}
                               />
                               <div className="ml-3">
@@ -451,10 +341,7 @@ export default function VotingForm() {
                                         : "#e5e7eb",
                                   }}
                                 >
-                                  <span
-                                    className="mr-2"
-                                    style={{ color: "#D4AF37" }}
-                                  >
+                                  <span className="mr-2" style={{ color: "#D4AF37" }}>
                                     {category.icon}
                                   </span>
                                   {category.title}
@@ -470,98 +357,52 @@ export default function VotingForm() {
                     </RadioGroup>
                   </div>
 
-                  {/* Nominee Selection */}
+                  {/* Nominee Info */}
                   <div className="space-y-4">
                     <h3
                       className="text-xl font-semibold flex items-center"
                       style={{ color: "#D4AF37" }}
                     >
-                      <User
-                        className="w-5 h-5 mr-2"
-                        style={{ color: "#D4AF37" }}
-                      />
-                      2. Select Nominee
+                      <User className="w-5 h-5 mr-2" style={{ color: "#D4AF37" }} />
+                      2. Nominee Information
                     </h3>
-                    
-                    <div className="space-y-4">
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label
-                          htmlFor="nomineeSelect"
-                          className="text-gray-300 text-sm block mb-2"
-                        >
-                          Select from Eligible Members
+                        <Label htmlFor="nomineeName" className="text-gray-300 text-sm">
+                          Nominee Name
                         </Label>
-                        <Select 
-                          value={formData.nomineeId} 
-                          onValueChange={handleNomineeSelect}
-                          disabled={isLoadingMembers}
-                        >
-                          <SelectTrigger 
-                            className="bg-transparent border-gray-700 text-white focus:border-[#D4AF37] focus:ring-[#D4AF37]/20"
-                            style={{ minHeight: "48px" }}
-                          >
-                            <SelectValue 
-                              placeholder={isLoadingMembers ? "Loading members..." : "Choose a member to nominate"}
-                            />
-                          </SelectTrigger>
-                          <SelectContent className="bg-gray-800 border-gray-700 text-white">
-                            {isLoadingMembers ? (
-                              <SelectItem value="loading" disabled>
-                                Loading members...
-                              </SelectItem>
-                            ) : eligibleMembers.length === 0 ? (
-                              <SelectItem value="no-members" disabled>
-                                No eligible members found
-                              </SelectItem>
-                            ) : (
-                              eligibleMembers.map((member) => (
-                                <SelectItem 
-                                  key={member.id} 
-                                  value={member.id}
-                                  className="hover:bg-gray-700 focus:bg-gray-700"
-                                >
-                                  <div className="flex flex-col">
-                                    <span className="font-medium">{member.fullName}</span>
-                                    <span className="text-sm text-gray-400">{member.email}</span>
-                                  </div>
-                                </SelectItem>
-                              ))
-                            )}
-                          </SelectContent>
-                        </Select>
+                        <Input
+                          id="nomineeName"
+                          value={formData.nomineeName}
+                          onChange={(e) => handleInputChange("nomineeName", e.target.value)}
+                          placeholder="Enter nominee's full name"
+                          className="bg-transparent border-gray-700 text-white focus:border-[#D4AF37] focus:ring-[#D4AF37]/20"
+                          required
+                        />
                       </div>
 
-                      {/* Show selected nominee details */}
-                      {formData.nomineeId && (
-                        <div 
-                          className="p-4 rounded-lg"
-                          style={{
-                            backgroundColor: "rgba(212, 175, 55, 0.1)",
-                            borderWidth: "1px",
-                            borderColor: "rgba(212, 175, 55, 0.3)",
-                          }}
-                        >
-                          <h4 className="font-medium text-[#D4AF37] mb-2">Selected Nominee:</h4>
-                          <div className="text-sm text-gray-300">
-                            <p><strong>Name:</strong> {formData.nomineeName}</p>
-                            <p><strong>Email:</strong> {formData.nomineeEmail}</p>
-                          </div>
-                        </div>
-                      )}
-
+                      <div>
+                        <Label htmlFor="nomineeEmail" className="text-gray-300 text-sm">
+                          Nominee Email
+                        </Label>
+                        <Input
+                          id="nomineeEmail"
+                          type="email"
+                          value={formData.nomineeEmail}
+                          onChange={(e) => handleInputChange("nomineeEmail", e.target.value)}
+                          placeholder="Enter nominee's email"
+                          className="bg-transparent border-gray-700 text-white focus:border-[#D4AF37] focus:ring-[#D4AF37]/20"
+                          required
+                        />
+                      </div>
                     </div>
                   </div>
 
-                  {/* Reason Section */}
+                  {/* Reason */}
                   <div className="space-y-4">
-                    <h3
-                      className="text-xl font-semibold flex items-center"
-                      style={{ color: "#D4AF37" }}
-                    >
-                      <Star
-                        className="w-5 h-5 mr-2"
-                        style={{ color: "#D4AF37" }}
-                      />
+                    <h3 className="text-xl font-semibold flex items-center" style={{ color: "#D4AF37" }}>
+                      <Star className="w-5 h-5 mr-2" style={{ color: "#D4AF37" }} />
                       3. Reason for Nomination
                     </h3>
                     <div
@@ -573,164 +414,106 @@ export default function VotingForm() {
                       }}
                     >
                       <Textarea
-                        placeholder="In 300 words explain why this nominee deserves this award in this field..."
+                        placeholder="In 300 words explain why this nominee deserves this award..."
                         value={formData.reason}
-                        onChange={(e) =>
-                          handleInputChange("reason", e.target.value)
-                        }
+                        onChange={(e) => handleInputChange("reason", e.target.value)}
                         className="min-h-32 bg-transparent border-gray-700 text-white placeholder-gray-500 focus:border-[#D4AF37] focus:ring-[#D4AF37]/20"
                         maxLength={300}
                         required
                       />
                       <div className="flex justify-between mt-2 text-xs text-gray-400">
-                        <span>
-                          Be specific about their achievements and impact
-                        </span>
-                        <span>{formData.reason.length}/300 words</span>
+                        <span>Be specific about their achievements and impact</span>
+                        <span>{formData.reason.length}/300</span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Nominator Information */}
+                  {/* Nominator Info */}
                   <div className="space-y-4">
-                    <h3
-                      className="text-xl font-semibold flex items-center"
-                      style={{ color: "#D4AF37" }}
-                    >
-                      <Award
-                        className="w-5 h-5 mr-2"
-                        style={{ color: "#D4AF37" }}
-                      />
+                    <h3 className="text-xl font-semibold flex items-center" style={{ color: "#D4AF37" }}>
+                      <Award className="w-5 h-5 mr-2" style={{ color: "#D4AF37" }} />
                       4. Your Information
                     </h3>
-
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label
-                          htmlFor="nominatorName"
-                          className="text-gray-300 text-sm"
-                        >
+                        <Label htmlFor="nominatorName" className="text-gray-300 text-sm">
                           Your Name
                         </Label>
                         <Input
                           id="nominatorName"
                           value={formData.nominatorName}
-                          onChange={(e) =>
-                            handleInputChange("nominatorName", e.target.value)
-                          }
+                          onChange={(e) => handleInputChange("nominatorName", e.target.value)}
                           className="bg-transparent border-gray-700 text-white focus:border-[#D4AF37] focus:ring-[#D4AF37]/20"
                           required
                         />
                       </div>
                       <div>
-                        <Label
-                          htmlFor="nominatorEmail"
-                          className="text-gray-300 text-sm"
-                        >
+                        <Label htmlFor="nominatorEmail" className="text-gray-300 text-sm">
                           Your Email
                         </Label>
                         <Input
                           id="nominatorEmail"
                           type="email"
                           value={formData.nominatorEmail}
-                          onChange={(e) =>
-                            handleInputChange("nominatorEmail", e.target.value)
-                          }
+                          onChange={(e) => handleInputChange("nominatorEmail", e.target.value)}
                           className="bg-transparent border-gray-700 text-white focus:border-[#D4AF37] focus:ring-[#D4AF37]/20"
                           required
                         />
                       </div>
                     </div>
-
                     <div>
-                      <Label
-                        htmlFor="nominatorPhone"
-                        className="text-gray-300 text-sm"
-                      >
+                      <Label htmlFor="nominatorPhone" className="text-gray-300 text-sm">
                         Your Phone Number
                       </Label>
                       <Input
                         id="nominatorPhone"
                         type="tel"
-                        value={formData.nominatorPhone}
-                        onChange={(e) =>
-                          handleInputChange("nominatorPhone", e.target.value)
-                        }
+                        value={formData.nominatorPhoneNumber}
+                        onChange={(e) => handleInputChange("nominatorPhone", e.target.value)}
+                        placeholder="Optional"
                         className="bg-transparent border-gray-700 text-white focus:border-[#D4AF37] focus:ring-[#D4AF37]/20"
-                        required
                       />
                     </div>
                   </div>
 
-                  {/* Terms Agreement */}
-                  <div
-                    className="flex items-center space-x-3 p-4 rounded-lg"
-                    style={{
-                      backgroundColor: "rgba(0, 0, 0, 0.3)",
-                      borderWidth: "1px",
-                      borderColor: "rgba(212, 175, 55, 0.2)",
-                    }}
-                  >
+                  {/* Agreement */}
+                  <div className="flex items-start space-x-2">
                     <Checkbox
-                      id="agreeTerms"
+                      id="terms"
                       checked={formData.agreeTerms}
-                      onCheckedChange={(checked: boolean) =>
-                        handleInputChange("agreeTerms", checked)
+                      onCheckedChange={(checked) =>
+                        handleInputChange("agreeTerms", !!checked)
                       }
-                      className="data-[state=checked]:text-black"
-                      style={{
-                        borderColor: "#D4AF37",
-                        backgroundColor: formData.agreeTerms
-                          ? "#D4AF37"
-                          : "transparent",
-                      }}
+                      className="border-gray-600 text-[#D4AF37] focus:ring-[#D4AF37]/20"
+                      required
                     />
                     <Label
-                      htmlFor="agreeTerms"
-                      className="text-gray-300 text-sm"
+                      htmlFor="terms"
+                      className="text-sm text-gray-400 leading-tight"
                     >
-                      I confirm that all information provided is accurate and I
-                      have the nominee&apos;s permission to submit this
-                      nomination.
+                      I confirm that the information provided is accurate and
+                      that I am submitting this nomination in good faith.
                     </Label>
                   </div>
 
                   {/* Submit Button */}
-                  <div className="pt-4">
+                  <div className="flex justify-center">
                     <Button
                       type="submit"
-                      className="w-full py-6 text-lg font-medium tracking-wide transition-all duration-300 disabled:bg-gray-700 disabled:text-gray-400"
+                      disabled={isSubmitting}
+                      className="px-8 py-3 text-lg font-semibold transition-all duration-300"
                       style={{
                         background:
-                          !selectedCategory ||
-                          !formData.agreeTerms ||
-                          !formData.nomineeId ||
-                          isSubmitting
-                            ? "#374151"
-                            : "linear-gradient(135deg, #D4AF37, #FFD700, #D4AF37)",
-                        color:
-                          !selectedCategory ||
-                          !formData.agreeTerms ||
-                          !formData.nomineeId ||
-                          isSubmitting
-                            ? "#9ca3af"
-                            : "black",
+                          "linear-gradient(45deg, #FFD700, #FFA500, #DAA520, #FFD700)",
+                        backgroundSize: "300% 300%",
+                        animation: "gradient-shift 3s ease infinite",
+                        color: "black",
                         boxShadow:
-                          !selectedCategory ||
-                          !formData.agreeTerms ||
-                          !formData.nomineeId ||
-                          isSubmitting
-                            ? "none"
-                            : "0 10px 25px -5px rgba(212, 175, 55, 0.4)",
+                          "0 0 30px 0 rgba(255, 215, 0, 0.7), 0 10px 30px rgba(255, 215, 0, 0.3)",
+                        border: "2px solid #FFD700",
                       }}
-                      disabled={
-                        !selectedCategory ||
-                        !formData.agreeTerms ||
-                        !formData.nomineeId ||
-                        isSubmitting
-                      }
                     >
-                      <Send className="w-5 h-5 mr-2" />
+                      <Send className="w-4 h-4 mr-2" />
                       {isSubmitting ? "Submitting..." : "Submit Nomination"}
                     </Button>
                   </div>

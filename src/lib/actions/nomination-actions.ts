@@ -9,8 +9,8 @@ const CURRENT_YEAR = new Date().getFullYear()
 
 // Create a nomination
 export async function createNomination(data: {
-  nominator: { fullName: string; email: string; phone: string }
-  nominee: { fullName: string; email: string; phone: string }
+  nominator: { fullName: string; email: string; phone: string | null }
+  nominee: { fullName: string; email: string }
   category: string
   reason: string
 }) {
@@ -27,109 +27,117 @@ export async function createNomination(data: {
     }
 
     // Find or create nominator
-    let nominator = await prisma.member.findUnique({
-      where: { email: data.nominator.email }
-    });
 
-    if (!nominator) {
-      try {
-        nominator = await prisma.member.create({
-          data: {
-            fullName: data.nominator.fullName,
-            email: data.nominator.email,
-            membershipStatus: "PENDING"
-          }
-        });
-        console.log("Created new nominator:", nominator.id);
-      } catch (nominatorError) {
-        console.error("Error creating nominator:", nominatorError);
-        return {
-          success: false,
-          error: "Failed to create nominator profile. Please try again."
-        };
-      }
-    } else {
-      console.log("Found existing nominator:", nominator.id);
-    }
+    // let nominator = await prisma.member.findUnique({
+    //   where: { email: data.nominator.email }
+    // });
+
+    // if (!nominator) {
+    //   try {
+    //     nominator = await prisma.member.create({
+    //       data: {
+    //         fullName: data.nominator.fullName,
+    //         email: data.nominator.email,
+    //         membershipStatus: "PENDING"
+    //       }
+    //     });
+    //     console.log("Created new nominator:", nominator.id);
+    //   } catch (nominatorError) {
+    //     console.error("Error creating nominator:", nominatorError);
+    //     return {
+    //       success: false,
+    //       error: "Failed to create nominator profile. Please try again."
+    //     };
+    //   }
+    // } else {
+    //   console.log("Found existing nominator:", nominator.id);
+    // }
 
     // Find or create nominee
-    let nominee = await prisma.member.findUnique({
-      where: { email: data.nominee.email }
-    });
 
-    if (!nominee) {
-      try {
-        nominee = await prisma.member.create({
-          data: {
-            fullName: data.nominee.fullName,
-            email: data.nominee.email,
-            membershipStatus: "PENDING"
-          }
-        });
-        console.log("Created new nominee:", nominee.id);
-      } catch (nomineeError) {
-        console.error("Error creating nominee:", nomineeError);
-        return {
-          success: false,
-          error: "Failed to create nominee profile. Please try again."
-        };
-      }
-    } else {
-      console.log("Found existing nominee:", nominee.id);
-    }
+    // let nominee = await prisma.member.findUnique({
+    //   where: { email: data.nominee.email }
+    // });
+
+    // if (!nominee) {
+    //   try {
+    //     nominee = await prisma.member.create({
+    //       data: {
+    //         fullName: data.nominee.fullName,
+    //         email: data.nominee.email,
+    //         membershipStatus: "PENDING"
+    //       }
+    //     });
+    //     console.log("Created new nominee:", nominee.id);
+    //   } catch (nomineeError) {
+    //     console.error("Error creating nominee:", nomineeError);
+    //     return {
+    //       success: false,
+    //       error: "Failed to create nominee profile. Please try again."
+    //     };
+    //   }
+    // } else {
+    //   console.log("Found existing nominee:", nominee.id);
+    // }
 
     // Check if nominator already nominated someone for this category this year
-    const existingNomination = await prisma.nomination.findFirst({
-      where: {
-        nominatorId: nominator.id,
-        category: data.category,
-        year: CURRENT_YEAR
-      },
-      include: {
-        nominee: {
-          select: {
-            fullName: true
-          }
-        }
-      }
-    });
 
-    if (existingNomination) {
-      console.log("Duplicate nomination detected for category:", data.category);
-      return {
-        success: false,
-        error: `You have already nominated ${existingNomination.nominee?.fullName} for the ${data.category} category this year. Each person can only submit one nomination per category per year.`
-      };
-    }
+    // const existingNomination = await prisma.nomination.findFirst({
+    //   where: {
+    //     nominatorId: nominator.id,
+    //     category: data.category,
+    //     year: CURRENT_YEAR
+    //   },
+    //   include: {
+    //     nominee: {
+    //       select: {
+    //         fullName: true
+    //       }
+    //     }
+    //   }
+    // });
+
+    // if (existingNomination) {
+    //   console.log("Duplicate nomination detected for category:", data.category);
+    //   return {
+    //     success: false,
+    //     error: `You have already nominated ${existingNomination.nominee?.fullName} for the ${data.category} category this year. Each person can only submit one nomination per category per year.`
+    //   };
+    // }
 
     // Create the nomination
+
     let nomination;
+
     try {
-      nomination = await prisma.nomination.create({
+      nomination = await prisma.nominationTemp.create({
         data: {
-          nominatorId: nominator.id,
-          nomineeId: nominee.id,
+          nomineeName: data.nominee.fullName,
+          nomineeEmail: data.nominee.email,
+          nominatorName: data.nominator.fullName,
+          nominatorEmail: data.nominator.email,
+          nominatorPhoneNumber: data.nominator.phone,
           category: data.category,
           reason: data.reason,
           status: "PENDING",
           year: CURRENT_YEAR
         },
-        include: {
-          nominator: {
-            select: {
-              id: true,
-              fullName: true,
-              email: true
-            }
-          },
-          nominee: {
-            select: {
-              id: true,
-              fullName: true,
-              email: true
-            }
-          }
-        }
+        // include: {
+        //   nominator: {
+        //     select: {
+        //       id: true,
+        //       fullName: true,
+        //       email: true
+        //     }
+        //   },
+        //   nominee: {
+        //     select: {
+        //       id: true,
+        //       fullName: true,
+        //       email: true
+        //     }
+        //   }
+        // }
       });
       console.log("Nomination created successfully:", nomination.id);
     } catch (createError) {
@@ -145,12 +153,12 @@ export async function createNomination(data: {
       await sendNominationEmail({
         category: nomination.category,
         nominee: {
-          fullName: nominee.fullName,
-          email: nominee.email
+          fullName: data.nominee.fullName,
+          email: data.nominee.email
         },
         nominator: {
-          fullName: nominator.fullName,
-          email: nominator.email
+          fullName: data.nominator.fullName,
+          email: data.nominator.email
         },
         reason: nomination.reason,
         createdAt: nomination.createdAt
@@ -177,11 +185,11 @@ export async function createNomination(data: {
         id: nomination.id,
         category: nomination.category,
         status: nomination.status,
-        nominator: nomination.nominator,
-        nominee: nomination.nominee,
+        nominatorName: nomination.nominatorName,
+        nominee: nomination.nomineeName,
         createdAt: nomination.createdAt
       },
-      message: `Nomination for ${nominee.fullName} in the ${data.category} category has been successfully submitted and is now under review.`
+      message: `Nomination for ${nomination.nomineeName} in the ${data.category} category has been successfully submitted and is now under review.`
     };
 
   } catch (error) {
@@ -221,11 +229,7 @@ export async function createNomination(data: {
 // Get all nominations for admin
 export async function getAllNominations() {
   try {
-    const nominations = await prisma.nomination.findMany({
-      include: {
-        nominator: true,
-        nominee: true
-      },
+    const nominations = await prisma.nominationTemp.findMany({
       orderBy: {
         createdAt: "desc"
       }
@@ -241,13 +245,9 @@ export async function getAllNominations() {
 // Update nomination status
 export async function updateNominationStatus(nominationId: string, status: string) {
   try {
-    const updatedNomination = await prisma.nomination.update({
+    const updatedNomination = await prisma.nominationTemp.update({
       where: { id: nominationId },
       data: { status },
-      include: {
-        nominator: true,
-        nominee: true
-      }
     })
 
     revalidatePath("/admin/nominations")

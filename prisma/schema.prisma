@@ -190,3 +190,18 @@ model Vote {
 
   @@unique([voterId, category, year])
 }
+
+// temporary table for nomination
+model NominationTemp {
+  id                   String   @id @default(cuid()) @map("_id")
+  nominatorEmail       String
+  nominatorName        String
+  nominatorPhoneNumber String?
+  nomineeEmail         String
+  nomineeName          String
+  year                 Int      @default(2025)
+  category             String
+  reason               String
+  status               String   @default("PENDING")
+  createdAt            DateTime @default(now())
+}

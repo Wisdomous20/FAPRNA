@@ -32,6 +32,7 @@ import {
   getAllNominations,
   updateNominationStatus,
 } from "@/lib/actions/nomination-actions";
+import { NominationTemp } from "@/lib/interfaces";
 
 interface NominationSettings {
   id: string;
@@ -43,22 +44,22 @@ interface NominationSettings {
   updatedAt: Date;
 }
 
-interface Nomination {
-  id: string;
-  nominee: {
-    fullName: string;
-    email: string;
-  } | null;
-  nominator: {
-    fullName: string;
-    email: string;
-  } | null;
-  category: string;
-  createdAt: string | Date;
-  status: "PENDING" | "APPROVED" | "REJECTED";
-  reason: string;
-  year: number;
-}
+// interface Nomination {
+//   id: string;
+//   nominee: {
+//     fullName: string;
+//     email: string;
+//   } | null;
+//   nominator: {
+//     fullName: string;
+//     email: string;
+//   } | null;
+//   category: string;
+//   createdAt: string | Date;
+//   status: "PENDING" | "APPROVED" | "REJECTED";
+//   reason: string;
+//   year: number;
+// }
 
 interface NominationStats {
   totalNominations: number;
@@ -81,7 +82,7 @@ export default function NominationManagement() {
   });
   const [settings, setSettings] = useState<NominationSettings | null>(null);
   // const [nominationYears, setNominationYears] = useState<NominationSettings[]>([]);
-  const [nominations, setNominations] = useState<Nomination[]>([]);
+  const [nominations, setNominations] = useState<NominationTemp[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isToggling, setIsToggling] = useState(false);
   const [newYear, setNewYear] = useState<string>("");
@@ -215,10 +216,10 @@ export default function NominationManagement() {
 
   const filteredNominations = nominations.filter((nomination) => {
     return (
-      nomination.nominee?.fullName
+      nomination.nomineeName
         .toLowerCase()
         .includes(searchQuery.toLowerCase()) ||
-      nomination.nominator?.fullName
+      nomination.nominatorName
         .toLowerCase()
         .includes(searchQuery.toLowerCase()) ||
       getCategoryTitle(nomination.category)
@@ -556,18 +557,18 @@ export default function NominationManagement() {
                   <div className="flex justify-between items-start mb-2">
                     <div>
                       <h4 className="font-medium text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl">
-                        {nomination.nominee?.fullName}
+                        {nomination.nomineeName}
                       </h4>
                       <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-600">
                         {getCategoryTitle(nomination.category)}
                       </p>
                       <p className="text-xs sm:text-sm md:text-base lg:text-lg text-gray-500">
-                        Nominated by {nomination.nominator?.fullName} •{" "}
+                        Nominated by {nomination.nominatorName} •{" "}
                         {format(new Date(nomination.createdAt), "PPP")}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      {getStatusBadge(nomination.status)}
+                      {getStatusBadge(nomination.status as "PENDING" | "APPROVED" | "REJECTED")}
                       {nomination.status === "PENDING" && (
                         <div className="flex gap-2 sm:gap-3">
                           <Button
